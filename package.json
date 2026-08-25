@@ -1,0 +1,19 @@
+{
+  "name": "my-alexa-backend",
+  "version": "1.0.0",
+  "description": "MY Alexa multilingual AI voice assistant backend",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google/genai": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0"
+  }
+}
