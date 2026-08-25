@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>CBRND Alexa</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    min-height:100vh;
+    font-family:Arial,Helvetica,sans-serif;
+    background:
+        radial-gradient(circle at top,#172d52 0%,#07111f 45%,#02050a 100%);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:15px;
+}
+
+.app{
+    width:100%;
+    max-width:900px;
+    min-height:720px;
+    background:rgba(5,13,27,.94);
+    border:1px solid rgba(50,200,255,.2);
+    border-radius:28px;
+    overflow:hidden;
+    box-shadow:
+        0 25px 100px rgba(0,0,0,.65),
+        inset 0 0 70px rgba(0,190,255,.04);
+    display:flex;
+    flex-direction:column;
+}
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    padding:20px 23px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:13px;
+}
+
+.logo{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:25px;
+    background:linear-gradient(135deg,#00d9ff,#275cff);
+    box-shadow:0 0 30px rgba(0,210,255,.4);
+}
+
+.brand h1{
+    font-size:22px;
+}
+
+.brand p{
+    color:#8fa6c3;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.top-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+select{
+    background:#0b1930;
+    color:white;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;
+    padding:9px 11px;
+    outline:none;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:#77ffad;
+    font-size:12px;
+}
+
+.dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#39ff88;
+    box-shadow:0 0 12px #39ff88;
+}
+
+.hero{
+    text-align:center;
+    padding:35px 20px 20px;
+}
+
+.orb{
+    width:145px;
+    height:145px;
+    margin:auto;
+    border-radius:50%;
+    background:
+        radial-gradient(circle at 35% 30%,
+        white 0%,
+        #9af5ff 8%,
+        #21d0ff 23%,
+        #185eff 50%,
+        #091941 76%,
+        #020711 100%);
+    box-shadow:
+        0 0 35px rgba(0,215,255,.5),
+        0 0 100px rgba(40,90,255,.2);
+    transition:.3s;
+}
+
+.orb.active{
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+    50%{
+        transform:scale(1.06);
+        box-shadow:
+            0 0 60px rgba(0,240,255,.8),
+            0 0 120px rgba(30,90,255,.4);
+    }
+}
+
+.hero h2{
+    margin-top:25px;
+    font-size:27px;
+}
+
+.hero p{
+    color:#879bb7;
+    margin-top:8px;
+}
+
+.chat{
+    flex:1;
+    max-height:380px;
+    overflow-y:auto;
+    padding:10px 24px 20px;
+}
+
+.message{
+    display:flex;
+    margin:12px 0;
+}
+
+.message.user{
+    justify-content:flex-end;
+}
+
+.bubble{
+    max-width:80%;
+    padding:13px 16px;
+    border-radius:17px;
+    line-height:1.55;
+    white-space:pre-wrap;
+}
+
+.assistant .bubble{
+    background:#0c1b32;
+    border:1px solid rgba(100,190,255,.12);
+}
+
+.user .bubble{
+    background:linear-gradient(135deg,#1257d9,#197bd0);
+}
+
+.meta{
+    font-size:10px;
+    opacity:.55;
+    margin-bottom:4px;
+}
+
+.quick{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:8px 20px 15px;
+}
+
+.quick button{
+    white-space:nowrap;
+    color:#dcecff;
+    background:#0b1930;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:20px;
+    padding:9px 13px;
+    cursor:pointer;
+}
+
+.quick button:hover{
+    background:#14335c;
+}
+
+.input-area{
+    border-top:1px solid rgba(255,255,255,.08);
+    padding:15px 20px 20px;
+}
+
+.input-row{
+    display:flex;
+    gap:9px;
+}
+
+#input{
+    flex:1;
+    min-width:0;
+    color:white;
+    background:#071426;
+    border:1px solid rgba(255,255,255,.13);
+    border-radius:15px;
+    padding:15px;
+    outline:none;
+}
+
+#input:focus{
+    border-color:#20cfff;
+}
+
+button.action{
+    width:52px;
+    height:52px;
+    border-radius:15px;
+    border:1px solid rgba(255,255,255,.12);
+    color:white;
+    background:#10213a;
+    cursor:pointer;
+    font-size:20px;
+}
+
+button.action:hover{
+    background:#193a63;
+}
+
+.mic{
+    background:linear-gradient(135deg,#00aaff,#285cff)!important;
+}
+
+.mic.active{
+    background:linear-gradient(135deg,#ff315c,#ff7200)!important;
+    animation:micpulse 1s infinite;
+}
+
+@keyframes micpulse{
+    50%{
+        transform:scale(1.06);
+    }
+}
+
+.footer{
+    text-align:center;
+    color:#607590;
+    font-size:10px;
+    padding:9px;
+}
+
+@media(max-width:600px){
+
+    body{
+        padding:0;
+    }
+
+    .app{
+        min-height:100vh;
+        border-radius:0;
+    }
+
+    header{
+        padding:15px;
+    }
+
+    .brand h1{
+        font-size:18px;
+    }
+
+    .brand p{
+        display:none;
+    }
+
+    .top-right{
+        gap:6px;
+    }
+
+    .status{
+        display:none;
+    }
+
+    .hero{
+        padding-top:28px;
+    }
+
+    .orb{
+        width:125px;
+        height:125px;
+    }
+
+    .chat{
+        padding-left:14px;
+        padding-right:14px;
+    }
+
+    .bubble{
+        max-width:88%;
+    }
+
+    .quick{
+        padding-left:14px;
+        padding-right:14px;
+    }
+
+    .input-area{
+        padding:12px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+
+<div class="brand">
+
+<div class="logo">🤖</div>
+
+<div>
+<h1>CBRND Alexa</h1>
+<p>Smart Multilingual AI Voice Assistant</p>
+</div>
+
+</div>
+
+<div class="top-right">
+
+<select id="language">
+<option value="auto">Auto</option>
+<option value="hi">हिन्दी</option>
+<option value="en">English</option>
+<option value="gu">ગુજરાતી</option>
+</select>
+
+<div class="status">
+<span class="dot"></span>
+<span id="status">Online</span>
+</div>
+
+</div>
+
+</header>
+
+
+<section class="hero">
+
+<div class="orb" id="orb"></div>
+
+<h2>How can I help you?</h2>
+
+<p>Speak or type your question</p>
+
+</section>
+
+
+<div class="chat" id="chat"></div>
+
+
+<div class="quick">
+
+<button onclick="ask('What is your name?')">
+👤 Your Name
+</button>
+
+<button onclick="ask('What time is it?')">
+🕐 Time
+</button>
+
+<button onclick="ask('What is today date?')">
+📅 Date
+</button>
+
+<button onclick="ask('Tell me about history')">
+📖 History
+</button>
+
+<button onclick="ask('Tell me an original shayari')">
+✨ Shayari
+</button>
+
+</div>
+
+
+<div class="input-area">
+
+<div class="input-row">
+
+<input
+id="input"
+placeholder="Ask CBRND Alexa..."
+autocomplete="off"
+>
+
+<button
+class="action"
+onclick="send()">
+➤
+</button>
+
+<button
+class="action mic"
+id="mic"
+onclick="voice()">
+🎤
+</button>
+
+</div>
+
+</div>
+
+
+<div class="footer">
+CBRND Alexa • Created by Mr. Raaj
+</div>
+
+</div>
+
+
+<script>
+
+/* =====================================
+   IMPORTANT
+   Backend URL will be added later.
+===================================== */
+
+const API_URL = "";
+
+
+/* =====================================
+   ELEMENTS
+===================================== */
+
+const input =
+document.getElementById("input");
+
+const chat =
+document.getElementById("chat");
+
+const language =
+document.getElementById("language");
+
+const mic =
+document.getElementById("mic");
+
+const orb =
+document.getElementById("orb");
+
+const status =
+document.getElementById("status");
+
+
+let currentLanguage = "auto";
+
+let recognition = null;
+
+let listening = false;
+
+
+/* =====================================
+   LANGUAGE
+===================================== */
+
+language.addEventListener(
+"change",
+function(){
+
+currentLanguage =
+this.value;
+
+}
+);
+
+
+/* =====================================
+   ADD MESSAGE
+===================================== */
+
+function addMessage(
+text,
+type="assistant"
+){
+
+const message =
+document.createElement("div");
+
+message.className =
+"message " + type;
+
+const bubble =
+document.createElement("div");
+
+bubble.className =
+"bubble";
+
+const meta =
+document.createElement("div");
+
+meta.className =
+"meta";
+
+meta.textContent =
+type==="user"
+? "You"
+: "CBRND Alexa";
+
+bubble.appendChild(meta);
+
+bubble.appendChild(
+document.createTextNode(text)
+);
+
+message.appendChild(bubble);
+
+chat.appendChild(message);
+
+chat.scrollTop =
+chat.scrollHeight;
+
+}
+
+
+/* =====================================
+   LANGUAGE DETECTION
+===================================== */
+
+function detectLanguage(text){
+
+if(
+/[\u0900-\u097F]/.test(text)
+){
+return "hi";
+}
+
+if(
+/[\u0A80-\u0AFF]/.test(text)
+){
+return "gu";
+}
+
+return "en";
+
+}
+
+
+/* =====================================
+   SPEAK
+===================================== */
+
+function speak(text){
+
+if(
+!("speechSynthesis" in window)
+){
+return;
+}
+
+speechSynthesis.cancel();
+
+let lang =
+currentLanguage;
+
+if(lang==="auto"){
+lang =
+detectLanguage(text);
+}
+
+const u =
+new SpeechSynthesisUtterance(text);
+
+if(lang==="hi"){
+u.lang="hi-IN";
+}
+else if(lang==="gu"){
+u.lang="gu-IN";
+}
+else{
+u.lang="en-IN";
+}
+
+u.rate=.92;
+u.pitch=1;
+u.volume=1;
+
+u.onstart=()=>{
+orb.classList.add("active");
+};
+
+u.onend=()=>{
+orb.classList.remove("active");
+};
+
+speechSynthesis.speak(u);
+
+}
+
+
+/* =====================================
+   TIME
+===================================== */
+
+function getTime(){
+
+return new Intl.DateTimeFormat(
+"en-IN",
+{
+timeZone:"Asia/Kolkata",
+hour:"numeric",
+minute:"2-digit",
+second:"2-digit",
+hour12:true
+}
+).format(new Date());
+
+}
+
+
+function timeAnswer(){
+
+let lang =
+currentLanguage;
+
+if(lang==="auto"){
+lang =
+detectLanguage(input.value);
+}
+
+const time =
+getTime();
+
+if(lang==="hi"){
+return `अभी भारतीय समय के अनुसार ${time} बजे हैं।`;
+}
+
+if(lang==="gu"){
+return `હાલ ભારતીય સમય અનુસાર ${time} વાગ્યા છે.`;
+}
+
+return `The current Indian time is ${time}.`;
+
+}
+
+
+/* =====================================
+   DATE
+===================================== */
+
+function dateAnswer(){
+
+let lang =
+currentLanguage;
+
+if(lang==="auto"){
+lang =
+detectLanguage(input.value);
+}
+
+if(lang==="hi"){
+
+const d =
+new Intl.DateTimeFormat(
+"hi-IN",
+{
+timeZone:"Asia/Kolkata",
+weekday:"long",
+day:"numeric",
+month:"long",
+year:"numeric"
+}
+).format(new Date());
+
+return `आज ${d} है।`;
+
+}
+
+if(lang==="gu"){
+
+const d =
+new Intl.DateTimeFormat(
+"gu-IN",
+{
+timeZone:"Asia/Kolkata",
+weekday:"long",
+day:"numeric",
+month:"long",
+year:"numeric"
+}
+).format(new Date());
+
+return `આજે ${d} છે.`;
+
+}
+
+const d =
+new Intl.DateTimeFormat(
+"en-IN",
+{
+timeZone:"Asia/Kolkata",
+weekday:"long",
+day:"numeric",
+month:"long",
+year:"numeric"
+}
+).format(new Date());
+
+return `Today is ${d}.`;
+
+}
+
+
+/* =====================================
+   IDENTITY
+===================================== */
+
+function identityAnswer(){
+
+let lang =
+currentLanguage;
+
+if(lang==="auto"){
+lang =
+detectLanguage(input.value);
+}
+
+if(lang==="hi"){
+
+return `
+मैं CBRND Alexa हूँ।
+आप मुझसे कोई भी सवाल पूछ सकते हैं।
+मुझे Mr. Raaj ने बनाया है।
+मुझे बनाने के लिए धन्यवाद, Mr. Raaj।
+`;
+
+}
+
+if(lang==="gu"){
+
+return `
+હું CBRND Alexa છું.
+તમે મને કોઈપણ પ્રશ્ન પૂછી શકો છો.
+મને Mr. Raaj એ બનાવ્યો છે.
+મને બનાવવા માટે આભાર, Mr. Raaj.
+`;
+
+}
+
+return `
+I am CBRND Alexa.
+You can ask me any question.
+I was created by Mr. Raaj.
+Thank you, Mr. Raaj, for creating me.
+`;
+
+}
+
+
+/* =====================================
+   SPECIAL QUESTIONS
+===================================== */
+
+function isTime(text){
+
+const t =
+text.toLowerCase();
+
+return [
+"what time",
+"current time",
+"time now",
+"tell me the time",
+"अभी कितने बजे",
+"कितने बजे",
+"समय क्या है",
+"अभी समय",
+"હમણાં કેટલા વાગ્યા",
+"કેટલા વાગ્યા",
+"સમય કેટલો",
+"હાલ કેટલા વાગ્યા"
+]
+.some(x=>t.includes(x));
+
+}
+
+
+function isDate(text){
+
+const t =
+text.toLowerCase();
+
+return [
+"today date",
+"what is the date",
+"today's date",
+"date today",
+"आज की तारीख",
+"आज तारीख",
+"आज कौन सी तारीख",
+"આજની તારીખ",
+"આજે તારીખ",
+"આજ કઈ તારીખ"
+]
+.some(x=>t.includes(x));
+
+}
+
+
+function isIdentity(text){
+
+const t =
+text.toLowerCase();
+
+return [
+"what is your name",
+"your name",
+"who are you",
+"who created you",
+"who made you",
+"who is your creator",
+"आपका नाम क्या है",
+"तुम्हारा नाम क्या है",
+"आप कौन हो",
+"तुम्हें किसने बनाया",
+"आपको किसने बनाया",
+"તમારું નામ શું છે",
+"તમે કોણ છો",
+"તમને કોણે બનાવ્યા",
+"તમને કોણે બનાવ્યું"
+]
+.some(x=>t.includes(x));
+
+}
+
+
+/* =====================================
+   MAIN ASK
+===================================== */
+
+async function ask(command){
+
+command =
+command.trim();
+
+if(!command){
+return;
+}
+
+addMessage(
+command,
+"user"
+);
+
+input.value="";
+
+
+/* LOCAL TIME */
+
+if(isTime(command)){
+
+const answer =
+timeAnswer();
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* LOCAL DATE */
+
+if(isDate(command)){
+
+const answer =
+dateAnswer();
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* IDENTITY */
+
+if(isIdentity(command)){
+
+const answer =
+identityAnswer();
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* BACKEND NOT CONNECTED YET */
+
+const message = `
+AI backend अभी connect नहीं किया गया है।
+
+GitHub frontend successfully चल रहा है।
+अगले step में हम secure online Gemini backend connect करेंगे।
+`;
+
+addMessage(
+message,
+"assistant"
+);
+
+speak(message);
+
+}
+
+
+/* =====================================
+   SEND
+===================================== */
+
+function send(){
+
+ask(
+input.value
+);
+
+}
+
+
+input.addEventListener(
+"keydown",
+function(e){
+
+if(e.key==="Enter"){
+
+e.preventDefault();
+
+send();
+
+}
+
+}
+);
+
+
+/* =====================================
+   QUICK BUTTON
+===================================== */
+
+function quickAsk(text){
+
+ask(text);
+
+}
+
+
+/* =====================================
+   VOICE
+===================================== */
+
+function setupVoice(){
+
+const SR =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+if(!SR){
+
+mic.disabled=true;
+
+return;
+
+}
+
+recognition =
+new SR();
+
+recognition.continuous=false;
+
+recognition.interimResults=false;
+
+
+recognition.onstart=()=>{
+
+listening=true;
+
+mic.classList.add("active");
+
+orb.classList.add("active");
+
+status.textContent =
+"Listening...";
+
+};
+
+
+recognition.onresult=(event)=>{
+
+const text =
+event.results[0][0]
+.transcript;
+
+input.value=text;
+
+ask(text);
+
+};
+
+
+recognition.onerror=()=>{
+
+status.textContent =
+"Voice Error";
+
+};
+
+
+recognition.onend=()=>{
+
+listening=false;
+
+mic.classList.remove("active");
+
+orb.classList.remove("active");
+
+status.textContent =
+"Online";
+
+};
+
+}
+
+
+function voice(){
+
+if(!recognition){
+
+const msg =
+"Voice recognition is not supported in this browser.";
+
+addMessage(
+msg,
+"assistant"
+);
+
+speak(msg);
+
+return;
+
+}
+
+
+if(listening){
+
+recognition.stop();
+
+return;
+
+}
+
+
+let lang =
+currentLanguage;
+
+if(lang==="auto"){
+lang="en";
+}
+
+recognition.lang =
+lang==="hi"
+? "hi-IN"
+: lang==="gu"
+? "gu-IN"
+: "en-IN";
+
+
+recognition.start();
+
+}
+
+
+setupVoice();
+
+
+/* =====================================
+   WELCOME
+===================================== */
+
+addMessage(
+`
+Hello! I am CBRND Alexa.
+
+You can ask me questions in Hindi, English or Gujarati.
+
+You can also ask me the current time, today's date,
+history, shayari and many other questions.
+
+I was created by Mr. Raaj.
+`,
+"assistant"
+);
+
+</script>
+
+</body>
+</html>
