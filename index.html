@@ -959,21 +959,21 @@ async function ask(command) {
         }
 
 
-        const response = await fetch(
-            API_URL + "/api/ask",
-            {
-                method: "POST",
+      const response = await fetch(
+    API_URL + "/api/ask",
+    {
+        method: "POST",
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+        headers: {
+            "Content-Type": "application/json"
+        },
 
-                body: JSON.stringify({
-                    message: command,
-                    language: lang
-                })
-            }
-        );
+        body: JSON.stringify({
+            message: command,
+            language: lang
+        })
+    }
+);
 
 
         const data = await response.json();
