@@ -866,95 +866,170 @@ return [
    MAIN ASK
 ===================================== */
 
-async function ask(command){
+async function ask(command) {
 
-command =
-command.trim();
+    command = command.trim();
 
-if(!command){
-return;
-}
+    if (!command) return;
 
-addMessage(
-command,
-"user"
-);
+    addMessage(command, "user");
 
-input.value="";
+    input.value = "";
 
+    /* ===============================
+       LOCAL TIME
+    =============================== */
 
-/* LOCAL TIME */
+    if (isTime(command)) {
 
-if(isTime(command)){
+        const answer = timeAnswer();
 
-const answer =
-timeAnswer();
+        addMessage(answer, "assistant");
 
-addMessage(
-answer,
-"assistant"
-);
+        speak(answer);
 
-speak(answer);
-
-return;
-
-}
+        return;
+    }
 
 
-/* LOCAL DATE */
+    /* ===============================
+       LOCAL DATE
+    =============================== */
 
-if(isDate(command)){
+    if (isDate(command)) {
 
-const answer =
-dateAnswer();
+        const answer = dateAnswer();
 
-addMessage(
-answer,
-"assistant"
-);
+        addMessage(answer, "assistant");
 
-speak(answer);
+        speak(answer);
 
-return;
-
-}
+        return;
+    }
 
 
-/* IDENTITY */
+    /* ===============================
+       CBRND ALEXA IDENTITY
+    =============================== */
 
-if(isIdentity(command)){
+    if (isIdentity(command)) {
 
-const answer =
-identityAnswer();
+        const answer = identityAnswer();
 
-addMessage(
-answer,
-"assistant"
-);
+        addMessage(answer, "assistant");
 
-speak(answer);
+        speak(answer);
 
-return;
-
-}
+        return;
+    }
 
 
-/* BACKEND NOT CONNECTED YET */
+    /* ===============================
+       CHECK BACKEND
+    =============================== */
 
-const message = `
-AI backend अभी connect नहीं किया गया है।
+    if (!API_URL) {
 
-GitHub frontend successfully चल रहा है।
-अगले step में हम secure online Gemini backend connect करेंगे।
-`;
+        const answer =
+            "AI backend is not connected yet.";
 
-addMessage(
-message,
-"assistant"
-);
+        addMessage(answer, "assistant");
 
-speak(message);
+        speak(answer);
+
+        return;
+    }
+
+
+    /* ===============================
+       AI BACKEND
+    =============================== */
+
+    try {
+
+        status.textContent = "Thinking...";
+
+        orb.classList.add("active");
+
+
+        let lang = currentLanguage;
+
+        if (lang === "auto") {
+            lang = detectLanguage(command);
+        }
+
+
+        const response = await fetch(
+            API_URL + "/api/ask",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    message: command,
+                    language: lang
+                })
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.error ||
+                "AI server error"
+            );
+
+        }
+
+
+        const answer =
+            data.answer ||
+            "Sorry, I could not generate an answer.";
+
+
+        addMessage(
+            answer,
+            "assistant"
+        );
+
+
+        speak(answer);
+
+
+    } catch (error) {
+
+        console.error(
+            "AI connection error:",
+            error
+        );
+
+
+        const answer =
+            "Sorry, I am unable to connect to my AI server right now.";
+
+
+        addMessage(
+            answer,
+            "assistant"
+        );
+
+
+        speak(answer);
+
+    } finally {
+
+        status.textContent = "Online";
+
+        orb.classList.remove("active");
+
+    }
 
 }
 
