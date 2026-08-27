@@ -13,6 +13,11 @@
     padding:0;
 }
 
+html,body{
+    width:100%;
+    min-height:100%;
+}
+
 body{
     min-height:100vh;
     font-family:Arial,Helvetica,sans-serif;
@@ -58,6 +63,7 @@ header{
 .logo{
     width:52px;
     height:52px;
+    flex-shrink:0;
     border-radius:50%;
     display:flex;
     justify-content:center;
@@ -90,6 +96,12 @@ select{
     border-radius:10px;
     padding:9px 11px;
     outline:none;
+    cursor:pointer;
+}
+
+select option{
+    background:#0b1930;
+    color:white;
 }
 
 .status{
@@ -160,6 +172,7 @@ select{
     max-height:380px;
     overflow-y:auto;
     padding:10px 24px 20px;
+    scroll-behavior:smooth;
 }
 
 .message{
@@ -177,6 +190,7 @@ select{
     border-radius:17px;
     line-height:1.55;
     white-space:pre-wrap;
+    word-wrap:break-word;
 }
 
 .assistant .bubble{
@@ -199,6 +213,11 @@ select{
     gap:8px;
     overflow-x:auto;
     padding:8px 20px 15px;
+    scrollbar-width:none;
+}
+
+.quick::-webkit-scrollbar{
+    display:none;
 }
 
 .quick button{
@@ -209,10 +228,12 @@ select{
     border-radius:20px;
     padding:9px 13px;
     cursor:pointer;
+    transition:.2s;
 }
 
 .quick button:hover{
     background:#14335c;
+    transform:translateY(-1px);
 }
 
 .input-area{
@@ -234,25 +255,39 @@ select{
     border-radius:15px;
     padding:15px;
     outline:none;
+    font-size:15px;
+}
+
+#input::placeholder{
+    color:#6e839e;
 }
 
 #input:focus{
     border-color:#20cfff;
+    box-shadow:0 0 15px rgba(32,207,255,.08);
 }
 
 button.action{
     width:52px;
     height:52px;
+    flex-shrink:0;
     border-radius:15px;
     border:1px solid rgba(255,255,255,.12);
     color:white;
     background:#10213a;
     cursor:pointer;
     font-size:20px;
+    transition:.2s;
 }
 
 button.action:hover{
     background:#193a63;
+    transform:translateY(-1px);
+}
+
+button.action:disabled{
+    opacity:.5;
+    cursor:not-allowed;
 }
 
 .mic{
@@ -281,15 +316,24 @@ button.action:hover{
 
     body{
         padding:0;
+        align-items:stretch;
     }
 
     .app{
         min-height:100vh;
         border-radius:0;
+        border-left:0;
+        border-right:0;
     }
 
     header{
         padding:15px;
+    }
+
+    .logo{
+        width:45px;
+        height:45px;
+        font-size:21px;
     }
 
     .brand h1{
@@ -302,6 +346,11 @@ button.action:hover{
 
     .top-right{
         gap:6px;
+    }
+
+    select{
+        padding:8px 7px;
+        font-size:12px;
     }
 
     .status{
@@ -317,9 +366,14 @@ button.action:hover{
         height:125px;
     }
 
+    .hero h2{
+        font-size:23px;
+    }
+
     .chat{
         padding-left:14px;
         padding-right:14px;
+        max-height:none;
     }
 
     .bubble{
@@ -333,6 +387,16 @@ button.action:hover{
 
     .input-area{
         padding:12px;
+    }
+
+    #input{
+        padding:13px;
+        font-size:14px;
+    }
+
+    button.action{
+        width:48px;
+        height:48px;
     }
 }
 </style>
@@ -357,7 +421,7 @@ button.action:hover{
 
 <div class="top-right">
 
-<select id="language">
+<select id="language" aria-label="Language">
 <option value="auto">Auto</option>
 <option value="hi">हिन्दी</option>
 <option value="en">English</option>
@@ -425,6 +489,7 @@ autocomplete="off"
 
 <button
 class="action"
+id="sendButton"
 onclick="send()">
 ➤
 </button>
@@ -450,17 +515,24 @@ CBRND Alexa • Created by Mr. Raaj
 
 <script>
 
-/* =====================================
-   IMPORTANT
-   Backend URL will be added later.
-===================================== */
-
-const API_URL = "https://my-alexa-dzjs.onrender.com";
+/* =========================================================
+   CBRND ALEXA
+   GITHUB PAGES → RENDER → GEMINI
+========================================================= */
 
 
-/* =====================================
+/* =========================================================
+   IMPORTANT:
+   आपका current Render backend URL
+========================================================= */
+
+const API_URL =
+"https://my-alexa-dzjs.onrender.com";
+
+
+/* =========================================================
    ELEMENTS
-===================================== */
+========================================================= */
 
 const input =
 document.getElementById("input");
@@ -480,6 +552,13 @@ document.getElementById("orb");
 const status =
 document.getElementById("status");
 
+const sendButton =
+document.getElementById("sendButton");
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
 
 let currentLanguage = "auto";
 
@@ -487,10 +566,12 @@ let recognition = null;
 
 let listening = false;
 
+let speaking = false;
 
-/* =====================================
-   LANGUAGE
-===================================== */
+
+/* =========================================================
+   LANGUAGE CHANGE
+========================================================= */
 
 language.addEventListener(
 "change",
@@ -503,9 +584,9 @@ this.value;
 );
 
 
-/* =====================================
+/* =========================================================
    ADD MESSAGE
-===================================== */
+========================================================= */
 
 function addMessage(
 text,
@@ -531,7 +612,7 @@ meta.className =
 "meta";
 
 meta.textContent =
-type==="user"
+type === "user"
 ? "You"
 : "CBRND Alexa";
 
@@ -551,17 +632,14 @@ chat.scrollHeight;
 }
 
 
-/* =====================================
+/* =========================================================
    LANGUAGE DETECTION
-===================================== */
+========================================================= */
 
 function detectLanguage(text){
 
-if(
-/[\u0900-\u097F]/.test(text)
-){
-return "hi";
-}
+text =
+String(text || "");
 
 if(
 /[\u0A80-\u0AFF]/.test(text)
@@ -569,14 +647,35 @@ if(
 return "gu";
 }
 
+if(
+/[\u0900-\u097F]/.test(text)
+){
+return "hi";
+}
+
 return "en";
 
 }
 
 
-/* =====================================
+/* =========================================================
+   GET QUESTION LANGUAGE
+========================================================= */
+
+function getQuestionLanguage(text){
+
+if(currentLanguage !== "auto"){
+return currentLanguage;
+}
+
+return detectLanguage(text);
+
+}
+
+
+/* =========================================================
    SPEAK
-===================================== */
+========================================================= */
 
 function speak(text){
 
@@ -586,49 +685,140 @@ if(
 return;
 }
 
+if(!text){
+return;
+}
+
 speechSynthesis.cancel();
 
 let lang =
-currentLanguage;
+getQuestionLanguage(text);
 
-if(lang==="auto"){
-lang =
-detectLanguage(text);
-}
-
-const u =
+const utterance =
 new SpeechSynthesisUtterance(text);
 
-if(lang==="hi"){
-u.lang="hi-IN";
+
+/*
+   Voice language
+*/
+
+if(lang === "hi"){
+utterance.lang = "hi-IN";
 }
-else if(lang==="gu"){
-u.lang="gu-IN";
+else if(lang === "gu"){
+utterance.lang = "gu-IN";
 }
 else{
-u.lang="en-IN";
+utterance.lang = "en-IN";
 }
 
-u.rate=.92;
-u.pitch=1;
-u.volume=1;
 
-u.onstart=()=>{
+/*
+   Clear natural voice settings
+*/
+
+utterance.rate = 0.88;
+
+utterance.pitch = 1;
+
+utterance.volume = 1;
+
+
+/*
+   Try to select a suitable voice
+*/
+
+const voices =
+speechSynthesis.getVoices();
+
+let selectedVoice = null;
+
+if(lang === "hi"){
+
+selectedVoice =
+voices.find(v =>
+v.lang &&
+v.lang.toLowerCase()
+.startsWith("hi")
+);
+
+}
+
+else if(lang === "gu"){
+
+selectedVoice =
+voices.find(v =>
+v.lang &&
+v.lang.toLowerCase()
+.startsWith("gu")
+);
+
+}
+
+else{
+
+selectedVoice =
+voices.find(v =>
+v.lang &&
+(
+v.lang.toLowerCase()
+.startsWith("en-in")
+||
+v.lang.toLowerCase()
+.startsWith("en-gb")
+||
+v.lang.toLowerCase()
+.startsWith("en-us")
+)
+);
+
+}
+
+if(selectedVoice){
+
+utterance.voice =
+selectedVoice;
+
+}
+
+
+utterance.onstart = () => {
+
+speaking = true;
+
 orb.classList.add("active");
+
 };
 
-u.onend=()=>{
+
+utterance.onend = () => {
+
+speaking = false;
+
 orb.classList.remove("active");
+
 };
 
-speechSynthesis.speak(u);
+
+utterance.onerror = () => {
+
+speaking = false;
+
+orb.classList.remove("active");
+
+};
+
+
+speechSynthesis.speak(
+utterance
+);
 
 }
 
 
-/* =====================================
+/* =========================================================
    TIME
-===================================== */
+========================================================= */
 
 function getTime(){
 
@@ -646,47 +836,41 @@ hour12:true
 }
 
 
-function timeAnswer(){
-
-let lang =
-currentLanguage;
-
-if(lang==="auto"){
-lang =
-detectLanguage(input.value);
-}
+function timeAnswer(lang){
 
 const time =
 getTime();
 
-if(lang==="hi"){
-return `अभी भारतीय समय के अनुसार ${time} बजे हैं।`;
-}
+if(lang === "hi"){
 
-if(lang==="gu"){
-return `હાલ ભારતીય સમય અનુસાર ${time} વાગ્યા છે.`;
-}
-
-return `The current Indian time is ${time}.`;
+return `
+अभी भारतीय समय के अनुसार ${time} बजे हैं।
+`;
 
 }
 
+if(lang === "gu"){
 
-/* =====================================
+return `
+હાલ ભારતીય સમય અનુસાર ${time} વાગ્યા છે.
+`;
+
+}
+
+return `
+The current Indian time is ${time}.
+`;
+
+}
+
+
+/* =========================================================
    DATE
-===================================== */
+========================================================= */
 
-function dateAnswer(){
+function dateAnswer(lang){
 
-let lang =
-currentLanguage;
-
-if(lang==="auto"){
-lang =
-detectLanguage(input.value);
-}
-
-if(lang==="hi"){
+if(lang === "hi"){
 
 const d =
 new Intl.DateTimeFormat(
@@ -704,7 +888,8 @@ return `आज ${d} है।`;
 
 }
 
-if(lang==="gu"){
+
+if(lang === "gu"){
 
 const d =
 new Intl.DateTimeFormat(
@@ -721,6 +906,7 @@ year:"numeric"
 return `આજે ${d} છે.`;
 
 }
+
 
 const d =
 new Intl.DateTimeFormat(
@@ -739,321 +925,780 @@ return `Today is ${d}.`;
 }
 
 
-/* =====================================
+/* =========================================================
    IDENTITY
-===================================== */
+========================================================= */
 
-function identityAnswer(){
+function identityAnswer(lang){
 
-let lang =
-currentLanguage;
-
-if(lang==="auto"){
-lang =
-detectLanguage(input.value);
-}
-
-if(lang==="hi"){
+if(lang === "hi"){
 
 return `
 मैं CBRND Alexa हूँ।
 आप मुझसे कोई भी सवाल पूछ सकते हैं।
 मुझे Mr. Raaj ने बनाया है।
 मुझे बनाने के लिए धन्यवाद, Mr. Raaj।
-`;
+`.trim();
 
 }
 
-if(lang==="gu"){
+
+if(lang === "gu"){
 
 return `
 હું CBRND Alexa છું.
 તમે મને કોઈપણ પ્રશ્ન પૂછી શકો છો.
 મને Mr. Raaj એ બનાવ્યો છે.
 મને બનાવવા માટે આભાર, Mr. Raaj.
-`;
+`.trim();
 
 }
+
 
 return `
 I am CBRND Alexa.
 You can ask me any question.
 I was created by Mr. Raaj.
 Thank you, Mr. Raaj, for creating me.
-`;
+`.trim();
 
 }
 
 
-/* =====================================
-   SPECIAL QUESTIONS
-===================================== */
+/* =========================================================
+   TIME QUESTION DETECTION
+========================================================= */
 
 function isTime(text){
 
 const t =
-text.toLowerCase();
+String(text || "")
+.toLowerCase()
+.trim();
 
 return [
+
 "what time",
 "current time",
 "time now",
 "tell me the time",
+"tell time",
+"what's the time",
+"whats the time",
+"time please",
+
 "अभी कितने बजे",
 "कितने बजे",
 "समय क्या है",
 "अभी समय",
+"समय बताओ",
+"टाइम क्या है",
+"टाइम बताओ",
+"अभी का समय",
+
 "હમણાં કેટલા વાગ્યા",
 "કેટલા વાગ્યા",
 "સમય કેટલો",
-"હાલ કેટલા વાગ્યા"
+"હાલ કેટલા વાગ્યા",
+"સમય જણાવો",
+"ટાઈમ કેટલો",
+"ટાઇમ કેટલો"
+
 ]
-.some(x=>t.includes(x));
+.some(x =>
+t.includes(x)
+);
 
 }
 
+
+/* =========================================================
+   DATE QUESTION DETECTION
+========================================================= */
 
 function isDate(text){
 
 const t =
-text.toLowerCase();
+String(text || "")
+.toLowerCase()
+.trim();
 
 return [
+
 "today date",
 "what is the date",
 "today's date",
 "date today",
+"what date is today",
+"tell me today's date",
+"tell me the date",
+
 "आज की तारीख",
 "आज तारीख",
 "आज कौन सी तारीख",
+"आज की डेट",
+"आज डेट क्या है",
+"आज की डेट बताओ",
+"तारीख क्या है",
+
 "આજની તારીખ",
 "આજે તારીખ",
-"આજ કઈ તારીખ"
+"આજ કઈ તારીખ",
+"આજની ડેટ",
+"તારીખ શું છે",
+"આજની તારીખ જણાવો"
+
 ]
-.some(x=>t.includes(x));
+.some(x =>
+t.includes(x)
+);
 
 }
 
 
+/* =========================================================
+   IDENTITY QUESTION DETECTION
+========================================================= */
+
 function isIdentity(text){
 
 const t =
-text.toLowerCase();
+String(text || "")
+.toLowerCase()
+.trim();
 
 return [
+
 "what is your name",
 "your name",
 "who are you",
 "who created you",
 "who made you",
 "who is your creator",
+"what's your name",
+"whats your name",
+"tell me your name",
+
 "आपका नाम क्या है",
 "तुम्हारा नाम क्या है",
 "आप कौन हो",
+"तुम कौन हो",
 "तुम्हें किसने बनाया",
 "आपको किसने बनाया",
+"आपको किसने बनाया है",
+"तुम्हारा creator कौन है",
+
 "તમારું નામ શું છે",
 "તમે કોણ છો",
 "તમને કોણે બનાવ્યા",
-"તમને કોણે બનાવ્યું"
+"તમને કોણે બનાવ્યું",
+"તમને કોણે બનાવ્યા છે",
+"તમારા creator કોણ છે"
+
 ]
-.some(x=>t.includes(x));
+.some(x =>
+t.includes(x)
+);
 
 }
 
 
-/* =====================================
-   MAIN ASK
-===================================== */
+/* =========================================================
+   SHAYARI DETECTION
+========================================================= */
 
-async function ask(command) {
+function isShayari(text){
 
-    command = command.trim();
+const t =
+String(text || "")
+.toLowerCase();
 
-    if (!command) return;
+return [
 
-    addMessage(command, "user");
+"shayari",
+"शायरी",
+"શાયરી",
+"poetry",
+"poem",
+"कविता",
+"કવિતા"
 
-    input.value = "";
+]
+.some(x =>
+t.includes(x)
+);
 
-    /* ===============================
-       LOCAL TIME
-    =============================== */
-
-    if (isTime(command)) {
-
-        const answer = timeAnswer();
-
-        addMessage(answer, "assistant");
-
-        speak(answer);
-
-        return;
-    }
+}
 
 
-    /* ===============================
-       LOCAL DATE
-    =============================== */
+/* =========================================================
+   ORIGINAL SHAYARI
+========================================================= */
 
-    if (isDate(command)) {
+function shayariAnswer(lang){
 
-        const answer = dateAnswer();
+if(lang === "hi"){
 
-        addMessage(answer, "assistant");
+return `
+चाँद से रोशनी ली, सितारों से चमक ली,
+तेरी मुस्कान से हमने थोड़ी खुशी ली।
+रास्ते चाहे कितने भी मुश्किल क्यों न हों,
+उम्मीद ने हर बार नई राह दिखा दी।
+`.trim();
 
-        speak(answer);
-
-        return;
-    }
-
-
-    /* ===============================
-       CBRND ALEXA IDENTITY
-    =============================== */
-
-    if (isIdentity(command)) {
-
-        const answer = identityAnswer();
-
-        addMessage(answer, "assistant");
-
-        speak(answer);
-
-        return;
-    }
+}
 
 
-    /* ===============================
-       CHECK BACKEND
-    =============================== */
+if(lang === "gu"){
 
-    if (!API_URL) {
+return `
+ચાંદ પાસેથી પ્રકાશ લીધો, તારાઓ પાસેથી ચમક લીધી,
+તારી સ્મિતમાંથી થોડી ખુશી લીધી.
+રસ્તા ભલે ગમે તેટલા મુશ્કેલ હોય,
+આશાએ હંમેશા નવી રાહ બતાવી.
+`.trim();
 
-        const answer =
-            "AI backend is not connected yet.";
-
-        addMessage(answer, "assistant");
-
-        speak(answer);
-
-        return;
-    }
+}
 
 
-    /* ===============================
-       AI BACKEND
-    =============================== */
+return `
+I borrowed light from the moon and sparkle from the stars,
+and found a little happiness in your smile.
+No matter how difficult the road becomes,
+hope always shows us a new way.
+`.trim();
 
-    try {
-
-        status.textContent = "Thinking...";
-
-        orb.classList.add("active");
-
-
-        let lang = currentLanguage;
-
-        if (lang === "auto") {
-            lang = detectLanguage(command);
-        }
+}
 
 
-      const response = await fetch(
-    API_URL + "/api/ask",
-    {
-        method: "POST",
+/* =========================================================
+   OFFLINE FALLBACK
+   Used when Gemini returns 429 / 500 / network error
+========================================================= */
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+function getFallbackAnswer(command, lang){
 
-        body: JSON.stringify({
-            message: command,
-            language: lang
-        })
-    }
+const text =
+String(command || "")
+.toLowerCase();
+
+
+/*
+   Time
+*/
+
+if(isTime(command)){
+
+return timeAnswer(lang);
+
+}
+
+
+/*
+   Date
+*/
+
+if(isDate(command)){
+
+return dateAnswer(lang);
+
+}
+
+
+/*
+   Identity
+*/
+
+if(isIdentity(command)){
+
+return identityAnswer(lang);
+
+}
+
+
+/*
+   Shayari
+*/
+
+if(isShayari(command)){
+
+return shayariAnswer(lang);
+
+}
+
+
+/*
+   History
+*/
+
+if(
+text.includes("history") ||
+text.includes("इतिहास") ||
+text.includes("ઇતિહાસ")
+){
+
+if(lang === "hi"){
+
+return `
+इतिहास मानव सभ्यता, संस्कृतियों और महत्वपूर्ण घटनाओं का अध्ययन है।
+आप किसी विशेष देश, व्यक्ति या ऐतिहासिक घटना का नाम पूछ सकते हैं।
+`.trim();
+
+}
+
+if(lang === "gu"){
+
+return `
+ઇતિહાસ માનવ સંસ્કૃતિ, સમાજ અને મહત્વપૂર્ણ ઘટનાઓનો અભ્યાસ છે.
+તમે કોઈ ચોક્કસ દેશ, વ્યક્તિ અથવા ઐતિહાસિક ઘટના વિશે પૂછી શકો છો.
+`.trim();
+
+}
+
+return `
+History is the study of human civilization, cultures and important events.
+You can ask me about a specific country, person or historical event.
+`.trim();
+
+}
+
+
+/*
+   Generic fallback
+*/
+
+if(lang === "hi"){
+
+return `
+मैं CBRND Alexa हूँ।
+अभी मेरी online AI service की usage limit पूरी हो गई है।
+आप मुझसे समय, तारीख, मेरा नाम, शायरी और basic questions पूछ सकते हैं।
+कृपया थोड़ी देर बाद general AI question फिर से पूछें।
+`.trim();
+
+}
+
+
+if(lang === "gu"){
+
+return `
+હું CBRND Alexa છું.
+હાલ મારી online AI service ની usage limit પૂર્ણ થઈ ગઈ છે.
+તમે મને સમય, તારીખ, મારું નામ, શાયરી અને basic questions પૂછી શકો છો.
+થોડી વાર પછી general AI question ફરીથી પૂછો.
+`.trim();
+
+}
+
+
+return `
+I am CBRND Alexa.
+My online AI service has reached its current usage limit.
+You can still ask me for the time, date, my name, shayari and basic questions.
+Please try general AI questions again later.
+`.trim();
+
+}
+
+
+/* =========================================================
+   MAIN ASK FUNCTION
+========================================================= */
+
+async function ask(command){
+
+command =
+String(command || "")
+.trim();
+
+
+if(!command){
+
+return;
+
+}
+
+
+/*
+   Show user question
+*/
+
+addMessage(
+command,
+"user"
 );
 
 
-        const data = await response.json();
+/*
+   Clear input
+*/
+
+input.value = "";
 
 
-        if (!response.ok || !data.success) {
+/*
+   Determine language BEFORE clearing input
+*/
 
-            throw new Error(
-                data.error ||
-                "AI server error"
-            );
-
-        }
+const lang =
+getQuestionLanguage(command);
 
 
-        const answer =
-            data.answer ||
-            "Sorry, I could not generate an answer.";
+/* =========================================================
+   LOCAL TIME
+========================================================= */
 
+if(isTime(command)){
 
-        addMessage(
-            answer,
-            "assistant"
-        );
+const answer =
+timeAnswer(lang);
 
+addMessage(
+answer,
+"assistant"
+);
 
-        speak(answer);
+speak(answer);
 
-
-    } catch (error) {
-
-        console.error(
-            "AI connection error:",
-            error
-        );
-
-
-        const answer =
-            "Sorry, I am unable to connect to my AI server right now.";
-
-
-        addMessage(
-            answer,
-            "assistant"
-        );
-
-
-        speak(answer);
-
-    } finally {
-
-        status.textContent = "Online";
-
-        orb.classList.remove("active");
-
-    }
+return;
 
 }
 
 
-/* =====================================
-   SEND
-===================================== */
+/* =========================================================
+   LOCAL DATE
+========================================================= */
+
+if(isDate(command)){
+
+const answer =
+dateAnswer(lang);
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* =========================================================
+   LOCAL IDENTITY
+========================================================= */
+
+if(isIdentity(command)){
+
+const answer =
+identityAnswer(lang);
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* =========================================================
+   LOCAL SHAYARI
+========================================================= */
+
+if(isShayari(command)){
+
+/*
+   We can answer original shayari
+   without consuming Gemini quota.
+*/
+
+const answer =
+shayariAnswer(lang);
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* =========================================================
+   BACKEND CHECK
+========================================================= */
+
+if(!API_URL){
+
+const answer =
+lang === "hi"
+?
+"AI backend अभी connected नहीं है।"
+:
+lang === "gu"
+?
+"AI backend હજી connected નથી."
+:
+"AI backend is not connected yet.";
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/* =========================================================
+   AI REQUEST
+========================================================= */
+
+try{
+
+status.textContent =
+"Thinking...";
+
+orb.classList.add(
+"active"
+);
+
+sendButton.disabled =
+true;
+
+
+/*
+   Send request to Render
+*/
+
+const response =
+await fetch(
+API_URL + "/api/ask",
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:JSON.stringify({
+
+message:
+command,
+
+language:
+lang
+
+})
+
+}
+);
+
+
+/*
+   Safely read response
+*/
+
+let data = null;
+
+try{
+
+data =
+await response.json();
+
+}
+catch{
+
+data = null;
+
+}
+
+
+/*
+   Successful Gemini response
+*/
+
+if(
+response.ok &&
+data &&
+data.success &&
+data.answer
+){
+
+const answer =
+String(data.answer)
+.trim();
+
+
+addMessage(
+answer,
+"assistant"
+);
+
+speak(answer);
+
+return;
+
+}
+
+
+/*
+   Gemini 429
+*/
+
+if(
+response.status === 429
+){
+
+console.warn(
+"Gemini quota/rate limit reached."
+);
+
+const fallback =
+getFallbackAnswer(
+command,
+lang
+);
+
+addMessage(
+fallback,
+"assistant"
+);
+
+speak(fallback);
+
+return;
+
+}
+
+
+/*
+   Other server error
+*/
+
+const serverError =
+data &&
+data.error
+?
+String(data.error)
+:
+"AI server error";
+
+
+console.error(
+"AI Server Error:",
+serverError
+);
+
+
+/*
+   Fallback instead of ugly error
+*/
+
+const fallback =
+getFallbackAnswer(
+command,
+lang
+);
+
+addMessage(
+fallback,
+"assistant"
+);
+
+speak(fallback);
+
+
+}
+catch(error){
+
+console.error(
+"AI connection error:",
+error
+);
+
+
+/*
+   Internet / Render / Gemini error
+   → fallback
+*/
+
+const fallback =
+getFallbackAnswer(
+command,
+lang
+);
+
+addMessage(
+fallback,
+"assistant"
+);
+
+speak(fallback);
+
+
+}
+finally{
+
+status.textContent =
+"Online";
+
+orb.classList.remove(
+"active"
+);
+
+sendButton.disabled =
+false;
+
+}
+
+}
+
+
+/* =========================================================
+   SEND BUTTON
+========================================================= */
 
 function send(){
 
-ask(
-input.value
-);
+const text =
+input.value.trim();
+
+if(!text){
+
+return;
+
+}
+
+ask(text);
 
 }
 
 
+/* =========================================================
+   ENTER KEY
+========================================================= */
+
 input.addEventListener(
 "keydown",
-function(e){
+function(event){
 
-if(e.key==="Enter"){
+if(event.key === "Enter"){
 
-e.preventDefault();
+event.preventDefault();
 
 send();
 
@@ -1063,50 +1708,61 @@ send();
 );
 
 
-/* =====================================
-   QUICK BUTTON
-===================================== */
-
-function quickAsk(text){
-
-ask(text);
-
-}
-
-
-/* =====================================
-   VOICE
-===================================== */
+/* =========================================================
+   VOICE SETUP
+========================================================= */
 
 function setupVoice(){
 
-const SR =
+const SpeechRecognition =
 window.SpeechRecognition ||
 window.webkitSpeechRecognition;
 
-if(!SR){
 
-mic.disabled=true;
+if(!SpeechRecognition){
+
+mic.disabled =
+true;
+
+mic.title =
+"Voice recognition is not supported in this browser.";
 
 return;
 
 }
 
+
 recognition =
-new SR();
-
-recognition.continuous=false;
-
-recognition.interimResults=false;
+new SpeechRecognition();
 
 
-recognition.onstart=()=>{
+recognition.continuous =
+false;
 
-listening=true;
+recognition.interimResults =
+false;
 
-mic.classList.add("active");
+recognition.maxAlternatives =
+1;
 
-orb.classList.add("active");
+
+/*
+   Start
+*/
+
+recognition.onstart =
+function(){
+
+listening =
+true;
+
+mic.classList.add(
+"active"
+);
+
+orb.classList.add(
+"active"
+);
 
 status.textContent =
 "Listening...";
@@ -1114,34 +1770,120 @@ status.textContent =
 };
 
 
-recognition.onresult=(event)=>{
+/*
+   Result
+*/
+
+recognition.onresult =
+function(event){
+
+const result =
+event.results[0];
+
+if(!result){
+return;
+}
 
 const text =
-event.results[0][0]
-.transcript;
+result[0].transcript;
 
-input.value=text;
+input.value =
+text;
 
 ask(text);
 
 };
 
 
-recognition.onerror=()=>{
+/*
+   Error
+*/
+
+recognition.onerror =
+function(event){
+
+console.error(
+"Speech recognition error:",
+event.error
+);
+
+listening =
+false;
+
+mic.classList.remove(
+"active"
+);
+
+orb.classList.remove(
+"active"
+);
 
 status.textContent =
-"Voice Error";
+"Online";
+
+
+if(
+event.error ===
+"not-allowed"
+){
+
+const lang =
+currentLanguage === "auto"
+?
+"en"
+:
+currentLanguage;
+
+let message;
+
+if(lang === "hi"){
+
+message =
+"Microphone permission allow करें।";
+
+}
+else if(lang === "gu"){
+
+message =
+"Microphone permission allow કરો.";
+
+}
+else{
+
+message =
+"Please allow microphone permission.";
+
+}
+
+addMessage(
+message,
+"assistant"
+);
+
+speak(message);
+
+}
 
 };
 
 
-recognition.onend=()=>{
+/*
+   End
+*/
 
-listening=false;
+recognition.onend =
+function(){
 
-mic.classList.remove("active");
+listening =
+false;
 
-orb.classList.remove("active");
+mic.classList.remove(
+"active"
+);
+
+orb.classList.remove(
+"active"
+);
 
 status.textContent =
 "Online";
@@ -1151,19 +1893,48 @@ status.textContent =
 }
 
 
+/* =========================================================
+   VOICE BUTTON
+========================================================= */
+
 function voice(){
 
 if(!recognition){
 
-const msg =
-"Voice recognition is not supported in this browser.";
+const lang =
+currentLanguage === "auto"
+?
+"en"
+:
+currentLanguage;
+
+let message;
+
+if(lang === "hi"){
+
+message =
+"इस browser में voice recognition supported नहीं है। Chrome browser का उपयोग करें।";
+
+}
+else if(lang === "gu"){
+
+message =
+"આ browser માં voice recognition supported નથી. Chrome browser નો ઉપયોગ કરો.";
+
+}
+else{
+
+message =
+"Voice recognition is not supported in this browser. Please use Chrome.";
+
+}
 
 addMessage(
-msg,
+message,
 "assistant"
 );
 
-speak(msg);
+speak(message);
 
 return;
 
@@ -1179,44 +1950,122 @@ return;
 }
 
 
+/*
+   Set recognition language
+*/
+
 let lang =
 currentLanguage;
 
-if(lang==="auto"){
-lang="en";
+
+/*
+   Auto mode:
+   Use previous input language if available.
+   Otherwise English.
+*/
+
+if(lang === "auto"){
+
+const existingText =
+input.value.trim();
+
+if(existingText){
+
+lang =
+detectLanguage(existingText);
+
+}
+else{
+
+lang =
+"en";
+
 }
 
-recognition.lang =
-lang==="hi"
-? "hi-IN"
-: lang==="gu"
-? "gu-IN"
-: "en-IN";
+}
 
+
+if(lang === "hi"){
+
+recognition.lang =
+"hi-IN";
+
+}
+else if(lang === "gu"){
+
+recognition.lang =
+"gu-IN";
+
+}
+else{
+
+recognition.lang =
+"en-IN";
+
+}
+
+
+try{
 
 recognition.start();
 
 }
+catch(error){
 
+console.warn(
+"Recognition start error:",
+error
+);
+
+}
+
+}
+
+
+/* =========================================================
+   SPEECH SYNTHESIS VOICES LOAD
+========================================================= */
+
+if(
+"speechSynthesis" in window
+){
+
+speechSynthesis.onvoiceschanged =
+function(){
+
+speechSynthesis.getVoices();
+
+};
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
 
 setupVoice();
 
 
-/* =====================================
-   WELCOME
-===================================== */
+/* =========================================================
+   WELCOME MESSAGE
+========================================================= */
 
-addMessage(
+const welcome =
 `
 Hello! I am CBRND Alexa.
 
 You can ask me questions in Hindi, English or Gujarati.
 
 You can also ask me the current time, today's date,
-history, shayari and many other questions.
+history, original shayari and many other questions.
 
 I was created by Mr. Raaj.
-`,
+`.trim();
+
+
+addMessage(
+welcome,
 "assistant"
 );
 
